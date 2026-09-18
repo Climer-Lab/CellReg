@@ -86,7 +86,6 @@ else
         end
     end
 end
-set(ProjFig,'PaperPositionMode','auto')
 
 initial_stage=false;
 if ~isempty(varargin)
@@ -96,11 +95,9 @@ if ~isempty(varargin)
 end
 
 if initial_stage
-    savefig(ProjFig,fullfile(figures_directory,'Stage 4 - projcetions - initial registration.fig'))
-    saveas(ProjFig,fullfile(figures_directory,'Stage 4 - projcetions - initial registration'),'png')
+    save_figure(ProjFig,figures_directory,'Stage 4 - projcetions - initial registration')
 else
-    savefig(ProjFig,fullfile(figures_directory,'Stage 5 - projcetions - final registration.fig'))
-    saveas(ProjFig,fullfile(figures_directory,'Stage 5 - projcetions - final registration'),'png')    
+    save_figure(ProjFig,figures_directory,'Stage 5 - projcetions - final registration')
 end
 
 end

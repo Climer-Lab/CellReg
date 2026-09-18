@@ -59,9 +59,7 @@ text(3.5,0.5,'Number of cell-pairs (log)','fontsize',14,'fontweight','bold','rot
 text(1.5,0,'0','fontsize',14,'fontweight','bold','HorizontalAlignment','Left')
 text(1.5,1,'Max','fontsize',14,'fontweight','bold','HorizontalAlignment','Left')
 set(gca,'fontsize',14)
-set(DisplaceFig,'PaperPositionMode','auto')
-savefig(DisplaceFig,fullfile(figures_directory,'Stage 3 - (x,y) displacements.fig'))
-saveas(DisplaceFig,fullfile(figures_directory,'Stage 3 - (x,y) displacements'),'png')
+save_figure(DisplaceFig,figures_directory,'Stage 3 - (x,y) displacements')
 
 end
 

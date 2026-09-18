@@ -33,9 +33,7 @@ else
         title(['Session ' num2str(n)],'fontsize',14,'fontweight','bold')
     end
 end
-set(FP_Fig,'PaperPositionMode','auto')
-savefig(FP_Fig,fullfile(figures_directory,'Stage 1 - spatial footprints projections.fig'))
-saveas(FP_Fig,fullfile(figures_directory,'Stage 1 - spatial footprints projections'),'png')
+save_figure(FP_Fig,figures_directory,'Stage 1 - spatial footprints projections')
 
 end
 

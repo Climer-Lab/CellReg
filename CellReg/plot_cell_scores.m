@@ -139,9 +139,7 @@ set(gca,'XTickLabel',x_label,'fontsize',14,'fontweight','bold')
 set(h, 'Xdir', 'reverse')
 xlabel('Score','fontsize',14,'fontweight','bold')
 ylabel('Cum. fraction','fontsize',14,'fontweight','bold')
-set(ScoreFig,'PaperPositionMode','auto')
-savefig(ScoreFig,fullfile(figures_directory,'Stage 5 - cell scores.fig'))
-saveas(ScoreFig,fullfile(figures_directory,'Stage 5 - cell scores'),'png')
+save_figure(ScoreFig,figures_directory,'Stage 5 - cell scores')
 
 % plotting the distribution of P_same for all registered cell-pairs
 number_of_sessions=size(p_same_registered_pairs{1},1);
@@ -186,9 +184,7 @@ set(gca,'XTickLabel',x_label,'fontsize',14,'fontweight','bold')
 set(h, 'Xdir', 'reverse')
 xlabel('P_s_a_m_e','fontsize',14,'fontweight','bold')
 ylabel('Cum. fraction','fontsize',14,'fontweight','bold')
-set(PairFig,'PaperPositionMode','auto')
-savefig(PairFig,fullfile(figures_directory,'Stage 5 - Registered pairs P_same.fig'))
-saveas(PairFig,fullfile(figures_directory,'Stage 5 - Registered pairs P_same'),'png')
+save_figure(PairFig,figures_directory,'Stage 5 - Registered pairs P_same')
 
 end
 

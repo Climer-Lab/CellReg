@@ -34,7 +34,6 @@ if ~isempty(varargin)
     set(gca,'fontsize',14)
     set(gca,'XTick',x)
     set(gca,'XTickLabel',x_label,'fontsize',14)
-    set(ModelFig,'PaperPositionMode','auto')
     xlabel('Spatial correlation','FontWeight','Bold','fontsize',14)
     ylabel('Number of cell-pairs','FontWeight','Bold','fontsize',14)
     set(gca,'fontsize',14)
@@ -119,9 +118,7 @@ text(centroid_distance_intersection+1,0.9*max(centroid_distances_distribution),[
 text(centroid_distance_intersection-1,0.9*max(centroid_distances_distribution),[num2str(round(100*(1-same_more_than_thresh))) '%'],'fontsize',14,'fontweight','bold','HorizontalAlignment','Center','color','g')
 text(centroid_distance_intersection+1,0.8*max(centroid_distances_distribution),[num2str(round(100*(diff_more_than_thresh))) '%'],'fontsize',14,'fontweight','bold','HorizontalAlignment','Center','color','r')
 text(centroid_distance_intersection-1,0.8*max(centroid_distances_distribution),[num2str(round(100*(1-diff_more_than_thresh))) '%'],'fontsize',14,'fontweight','bold','HorizontalAlignment','Center','color','r')
-set(ModelFig,'PaperPositionMode','auto')
-savefig(ModelFig,fullfile(figures_directory,'Stage 3 - model.fig'))
-saveas(ModelFig,fullfile(figures_directory,'Stage 3 - model'),'png')
+save_figure(ModelFig,figures_directory,'Stage 3 - model')
 
 end
 
