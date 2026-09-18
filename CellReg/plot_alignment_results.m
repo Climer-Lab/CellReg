@@ -96,9 +96,7 @@ set(gca,'xtick',[])
 set(gca,'ytick',[])
 legend(legend_strings)
 legend('boxoff')
-set(AlignFig,'PaperPositionMode','auto')
-savefig(AlignFig,fullfile(figures_directory,'Stage 2 - pre vs post alignment.fig'))
-saveas(AlignFig,fullfile(figures_directory,'Stage 2 - pre vs post alignment'),'png')
+save_figure(AlignFig,figures_directory,'Stage 2 - pre vs post alignment')
 
 % Plotting measurments of preparation stability:
 if number_of_sessions>2
@@ -172,9 +170,7 @@ if number_of_sessions>2
     set(gca,'fontsize',14)
     xlabel('Session number','FontWeight','Bold','fontsize',14)
     ylabel('Maximal correlation','FontWeight','Bold','fontsize',14)
-    set(AbnormalFig,'PaperPositionMode','auto')
-    savefig(AbnormalFig,fullfile(figures_directory,'Stage 2 - abnormalities test - Correlations.fig'))
-    saveas(AbnormalFig,fullfile(figures_directory,'Stage 2 - abnormalities test - Correlations'),'png')
+    save_figure(AbnormalFig,figures_directory,'Stage 2 - abnormalities test - Correlations')
 end
 
 AbnormalGenFig=figure('units','normalized','outerposition',[0.1 0.1 0.8 0.8],'Visible',figures_visibility);
@@ -306,9 +302,7 @@ x=1:number_of_sessions;
 set(gca,'XTick',x)
 set(gca,'XTickLabel',x_label,'fontsize',14,'fontweight','bold')
 set(gca,'fontsize',14)
-set(AbnormalGenFig,'PaperPositionMode','auto')
-savefig(AbnormalGenFig,fullfile(figures_directory,'Stage 2 - abnormalities test - general.fig'))
-saveas(AbnormalGenFig,fullfile(figures_directory,'Stage 2 - abnormalities test - general'),'png')
+save_figure(AbnormalGenFig,figures_directory,'Stage 2 - abnormalities test - general')
 
 % if non-rigid transformation was used:
 if strcmp(alignment_type,'Non-rigid')
@@ -348,9 +342,7 @@ if strcmp(alignment_type,'Non-rigid')
             title(['Session ' num2str(n)],'fontsize',14,'fontweight','bold')
         end
     end
-    set(NonRigidFig,'PaperPositionMode','auto')
-    savefig(NonRigidFig,fullfile(figures_directory,'Stage 1 - Non-rigid transformations.fig'))
-    saveas(NonRigidFig,fullfile(figures_directory,'Stage 1 - Non-rigid transformations'),'png')    
+    save_figure(NonRigidFig,figures_directory,'Stage 1 - Non-rigid transformations')
 end
     
 end

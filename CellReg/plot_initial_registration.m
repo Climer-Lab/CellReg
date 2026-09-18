@@ -59,9 +59,7 @@ else
     legend('Same Cell','Different Cells','location','northwest')
     legend('boxoff')
 end
-set(DiffFig,'PaperPositionMode','auto')
-savefig(DiffFig,fullfile(figures_directory,'Stage 4 - same versus different cells.fig'))
-saveas(DiffFig,fullfile(figures_directory,'Stage 4 - same versus different cells'),'png')
+save_figure(DiffFig,figures_directory,'Stage 4 - same versus different cells')
 
 % Plotting the registration results with the cell maps from all sessions:
 is_initial_stage=true;
