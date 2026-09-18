@@ -37,6 +37,22 @@ An example data set and cell registration results are provided in the *SampleDat
 
 For more information refer to the user manual found in the *Docs* directory.
 
+## Performance notes (GPU / parallel processing)
+
+The FOV alignment, cell-pair similarity and initial registration stages are
+vectorized and work on the small window around each cell, so they no longer
+need a parallel pool to be fast. Two compute options remain, in the GUI's
+*Compute:* panel and as variables at the top of `demo.m` / `demo_2P.m`:
+
+* **Use GPU** - runs the rotation search and the FOV cross-correlations
+  (`normxcorr2`) on a supported NVIDIA GPU (Parallel Computing Toolbox).
+  Enabled by default when a GPU is detected; results agree with the CPU path
+  to ~1e-9. `cellreg_use_gpu(false)` disables it from the command line.
+* **Parallel pool (parfor)** - uses a parallel pool for the rotation search
+  when the GPU is not used. Off by default, because starting a pool takes tens
+  of seconds and the GPU / vectorized CPU path is faster. An already open pool
+  is reused and never deleted by CellReg.
+
 ## Main stages of the cell registration procedure
 
 1. Loading the spatial footprints of cellular activity from the different sessions.

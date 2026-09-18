@@ -1,6 +1,6 @@
 function [cell_to_index_map,registered_cells_spatial_correlations,non_registered_cells_spatial_correlations]=initial_registration_spatial_correlations(maximal_distance,spatial_correlation_threshold,spatial_footprints,centroid_locations)
 % This function performs an initial cell registration across sessions
-% based on a chosen spatial correlation threshold. 
+% based on a chosen spatial correlation threshold.
 
 % Inputs:
 % 1. maximal_distance
@@ -15,91 +15,63 @@ function [cell_to_index_map,registered_cells_spatial_correlations,non_registered
 
 number_of_sessions=size(spatial_footprints,2);
 
-% initializing the registration with the cells from session #1:
-  
-if strmatch(class(spatial_footprints{1}),'char')
-        footprint_info = get_spatial_footprints(spatial_footprints{1});
-        initial_number_of_cells = footprint_info.size(1);
-        registered_spatial_footprints = footprint_info.load_footprints;
-        registered_spatial_footprints = registered_spatial_footprints.footprints;
-        write_to_temp_file = 1;
-        save([footprint_info.write2path,filesep,'reg_foot.mat'], 'registered_spatial_footprints','-v7.3');
-        mat_file = matfile([footprint_info.write2path,filesep,'reg_foot.mat'],'Writable',true);
-        clear registered_spatial_footprints
-else
-    registered_spatial_footprints=spatial_footprints{1};
-    initial_number_of_cells=size(spatial_footprints{1},1);
-    write_to_temp_file = 0;
+% Spatial correlations are computed from a sparse representation of each
+% session (see footprints_to_sparse / sparse_corr2). The list of registered
+% cells only needs to remember which (session, cell) created each entry
+% instead of accumulating a copy of every footprint:
+sparse_footprints=cell(1,number_of_sessions);
+for n=1:number_of_sessions
+    sparse_footprints{n}=footprints_to_sparse(spatial_footprints{n});
 end
+
+% initializing the registration with the cells from session #1:
+initial_number_of_cells=sparse_footprints{1}.n;
 cell_to_index_map=zeros(initial_number_of_cells,number_of_sessions);
 cell_to_index_map(:,1)=1:initial_number_of_cells;
 spatial_correlation_map=zeros(initial_number_of_cells,number_of_sessions);
-
 registered_centroid_locations=centroid_locations{1};
+registered_origin=[ones(initial_number_of_cells,1) , (1:initial_number_of_cells)']; % (session, cell) of each registered entry
 
 % allocating space:
 count=0;
-duplicate_match_count=0;
-neighbors_spatial_correlations=zeros(1,number_of_sessions^2*initial_number_of_cells);
 registered_cells_spatial_correlations=zeros(1,number_of_sessions^2*initial_number_of_cells);
 non_registered_cells_spatial_correlations=zeros(1,number_of_sessions^2*initial_number_of_cells);
-neighbors_centroid_distances=zeros(1,number_of_sessions^2*initial_number_of_cells);
 
-neighbor_count=0;
 assigned_count=0;
 non_assigned_count=0;
-num_candidates=0;
 disp('Registering cells:');
 disp('Initializing list with the cells from session #1');
-display_progress_bar('Terminating previous progress bars',true)    
+display_progress_bar('Terminating previous progress bars',true)
 for n=2:number_of_sessions; % registering the rest of the sessions
     display_progress_bar(['Registering cells in session #' num2str(n) ' - '],false)
-    if strmatch(class(spatial_footprints{1}),'char')
-        new_spatial_footprints = get_spatial_footprints(spatial_footprints{n});
-        new_spatial_footprints = new_spatial_footprints.load_footprints;
-        new_spatial_footprints = new_spatial_footprints.footprints;
-    else
-        new_spatial_footprints=spatial_footprints{n};
-    end
-    new_centroids=centroid_locations{n};    
-    for k=1:size(new_spatial_footprints,1) % for each cell
-        display_progress_bar(100*(k)/size(new_spatial_footprints,1),false)
+    new_centroids=centroid_locations{n};
+    number_of_new_cells=sparse_footprints{n}.n;
+    for k=1:number_of_new_cells % for each cell
+        progress_tick(k,number_of_new_cells)
         is_assigned=0;
-        new_spatial_footprint=squeeze(new_spatial_footprints(k,:,:));
         centroid=repmat(new_centroids(k,:),size(registered_centroid_locations,1),1);
         distance_vec=sqrt(sum((centroid-registered_centroid_locations).^2,2));
         spatial_footprints_to_check=find(distance_vec<maximal_distance);
         if ~isempty(spatial_footprints_to_check) % finding the best candidate for each cell
             corr_vec=zeros(1,length(spatial_footprints_to_check));
-            num_candidates=num_candidates+length(spatial_footprints_to_check);
-            for m=1:length(spatial_footprints_to_check)
-                if write_to_temp_file
-    %                 [nrows,ncols,nframes] = size(m,'registered_spatial_footprints');
-                    suspected_spatial_footprint=squeeze(mat_file.registered_spatial_footprints(spatial_footprints_to_check(m),:,:));
-                else
-                    suspected_spatial_footprint=squeeze(registered_spatial_footprints(spatial_footprints_to_check(m),:,:));
-                end
-                
-                if sum(sum(suspected_spatial_footprint))==0 || sum(sum(new_spatial_footprint))==0
-                    corr_vec(m)=0;
-                else
-                    neighbor_count=neighbor_count+1;                  
-                    corr_vec(m)=corr2(suspected_spatial_footprint,new_spatial_footprint);
-                    neighbors_spatial_correlations(neighbor_count)=corr_vec(m);
-                    neighbors_centroid_distances(neighbor_count)=distance_vec(spatial_footprints_to_check(m));
+            % candidates are looked up by the (session, cell) that created
+            % them; empty spatial footprints get a correlation of 0:
+            candidate_sessions=registered_origin(spatial_footprints_to_check,1);
+            candidate_cells=registered_origin(spatial_footprints_to_check,2);
+            if sparse_footprints{n}.sum1(k)~=0
+                for candidate_session=unique(candidate_sessions)'
+                    in_session=find(candidate_sessions==candidate_session);
+                    these_cells=candidate_cells(in_session);
+                    is_empty=sparse_footprints{candidate_session}.sum1(these_cells)==0;
+                    if any(~is_empty)
+                        corr_vec(in_session(~is_empty))=sparse_corr2(sparse_footprints{n},k,sparse_footprints{candidate_session},these_cells(~is_empty));
+                    end
                 end
             end
             [highest_corr,highest_corr_ind]=max(corr_vec);
             if highest_corr<spatial_correlation_threshold % no registration - new cell to list
                 count=count+1;
-                if write_to_temp_file
-    %                 [nrows,ncols,nframes] = size(m,'registered_spatial_footprints');
-                    mat_file.registered_spatial_footprints(initial_number_of_cells+count,:,:) = ...
-                        reshape(new_spatial_footprint,[1,size(new_spatial_footprint,1),size(new_spatial_footprint,2)]);
-                else
-                    registered_spatial_footprints(initial_number_of_cells+count,:,:)=new_spatial_footprint;
-                end
-
+                registered_origin(initial_number_of_cells+count,:)=[n , k];
                 registered_centroid_locations(initial_number_of_cells+count,:)=new_centroids(k,:);
                 cell_to_index_map(initial_number_of_cells+count,:)=zeros(1,number_of_sessions);
                 cell_to_index_map(initial_number_of_cells+count,n)=k;
@@ -107,26 +79,17 @@ for n=2:number_of_sessions; % registering the rest of the sessions
             else % check if there is already a registered cell
                 index=spatial_footprints_to_check(highest_corr_ind);
                 if cell_to_index_map(index,n)==0 % register cells together
-                    cell_to_index_map(index,n)=k;               
+                    cell_to_index_map(index,n)=k;
                     spatial_correlation_map(index,n)=highest_corr;
                     assigned_count=assigned_count+1;
                     is_assigned=1;
                     registered_cells_spatial_correlations(1,assigned_count)=highest_corr;
                 else % there is already a registered cell
-                    duplicate_match_count=duplicate_match_count+1;
                     if highest_corr>spatial_correlation_map(index,n) % switch between cells
                         count=count+1;
                         switch_cell=cell_to_index_map(index,n);
-                        switch_spatial_footprint=squeeze(new_spatial_footprints(switch_cell,:,:));
                         switch_centroid=(centroid_locations{n}(switch_cell,:));
-                        if write_to_temp_file
-            %                 [nrows,ncols,nframes] = size(m,'registered_spatial_footprints');
-                            mat_file.registered_spatial_footprints(initial_number_of_cells+count,:,:) =...
-                                reshape(switch_spatial_footprint,[1,size(switch_spatial_footprint,1),size(switch_spatial_footprint,2)]);
-                        else
-                            registered_spatial_footprints(initial_number_of_cells+count,:,:)=switch_spatial_footprint;
-                        end
-
+                        registered_origin(initial_number_of_cells+count,:)=[n , switch_cell];
                         registered_centroid_locations(initial_number_of_cells+count,:)=switch_centroid;
                         cell_to_index_map(initial_number_of_cells+count,n)=switch_cell;
                         spatial_correlation_map(initial_number_of_cells+count,:)=zeros(1,number_of_sessions);
@@ -134,17 +97,10 @@ for n=2:number_of_sessions; % registering the rest of the sessions
                         spatial_correlation_map(index,n)=highest_corr;
                         assigned_count=assigned_count+1;
                         is_assigned=1;
-                        registered_cells_spatial_correlations(1,assigned_count)=highest_corr;               
+                        registered_cells_spatial_correlations(1,assigned_count)=highest_corr;
                     else % no registration - new cell to list
                         count=count+1;
-                         if write_to_temp_file
-            %                 [nrows,ncols,nframes] = size(m,'registered_spatial_footprints');
-                            mat_file.registered_spatial_footprints(initial_number_of_cells+count,:,:) = ...
-                            reshape(new_spatial_footprint,[1,size(new_spatial_footprint,1),size(new_spatial_footprint,2)]);
-                        else
-                            registered_spatial_footprints(initial_number_of_cells+count,:,:)=new_spatial_footprint;
-                        end
-
+                        registered_origin(initial_number_of_cells+count,:)=[n , k];
                         registered_centroid_locations(initial_number_of_cells+count,:)=new_centroids(k,:);
                         cell_to_index_map(initial_number_of_cells+count,:)=zeros(1,number_of_sessions);
                         cell_to_index_map(initial_number_of_cells+count,n)=k;
@@ -163,14 +119,7 @@ for n=2:number_of_sessions; % registering the rest of the sessions
             end
         else % no candidates - new cell to list
             count=count+1;
-            if write_to_temp_file
-%                 [nrows,ncols,nframes] = size(m,'registered_spatial_footprints');
-                mat_file.registered_spatial_footprints(initial_number_of_cells+count,:,:) =...
-                    reshape(new_spatial_footprint,[1,size(new_spatial_footprint,1),size(new_spatial_footprint,2)]);
-            else
-                registered_spatial_footprints(initial_number_of_cells+count,:,:)=new_spatial_footprint;
-            end
-            
+            registered_origin(initial_number_of_cells+count,:)=[n , k];
             registered_centroid_locations(initial_number_of_cells+count,:)=new_centroids(k,:);
             cell_to_index_map(initial_number_of_cells+count,:)=zeros(1,number_of_sessions);
             cell_to_index_map(initial_number_of_cells+count,n)=k;
@@ -186,4 +135,3 @@ non_registered_cells_spatial_correlations(non_registered_cells_spatial_correlati
 
 
 end
-

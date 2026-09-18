@@ -28,14 +28,19 @@ for n=1:number_of_sessions
     this_session_spatial_footprints = this_session_spatial_footprints.footprints;
     num_spatial_footprints=this_session_footprint_info.size(1);
     centroid_locations{n}=zeros(num_spatial_footprints,2);
+    
+    % calculating x and y projections of all the spatial footprints at once
+    % (two contiguous passes over the data instead of one strided slice per
+    % cell):
+    all_x_projections=reshape(sum(this_session_spatial_footprints,2),num_spatial_footprints,[]);
+    all_y_projections=reshape(sum(this_session_spatial_footprints,3),num_spatial_footprints,[]);
     for k=1:num_spatial_footprints
-        display_progress_bar(100*(k)/(num_spatial_footprints),false)
-        temp_spatial_footprint=squeeze(this_session_spatial_footprints(k,:,:));
+        progress_tick(k,num_spatial_footprints)
 
-        % calculating x and y projections of the spatial footprints for the
+        % x and y projections of this spatial footprint for the
         % calculation of the center of mass:
-        x_projection=sum(temp_spatial_footprint);
-        y_projection=sum(temp_spatial_footprint,2)';
+        x_projection=all_x_projections(k,:);
+        y_projection=all_y_projections(k,:);
         [~,max_x_ind]=max(x_projection);
         [~,max_y_ind]=max(y_projection);        
         

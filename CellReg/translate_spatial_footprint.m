@@ -6,7 +6,7 @@ function [translated_spatial_footprint]=translate_spatial_footprint(original_spa
 % 1. original_spatial_footprint
 % 2. translations
 % 3. centroid_location - is used to translate only values in a certain radius
-% 4. microns_per_pixel 
+% 4. microns_per_pixel
 
 % Outputs:
 % 1.translated_spatial_footprint
@@ -17,23 +17,14 @@ N=size(original_spatial_footprint,1);
 M=size(original_spatial_footprint,2);
 a=translations(2);
 b=translations(1);
-translated_spatial_footprint=zeros(size(original_spatial_footprint));
-for p=1:N
-    for q=1:M
-        wanted_coords=[p ;q]+[a; b];
-        if sqrt(sum(((wanted_coords-centroid_location').^2)))>maximal_cell_radius/microns_per_pixel
-            translated_spatial_footprint(p,q)=0;
-        else
-            wanted_coords(wanted_coords<0)=0;
-            if wanted_coords(1)>N+1;
-                wanted_coords(1)=N+1;
-            end
-            if wanted_coords(2)>M+1;
-                wanted_coords(1)=M+1;
-            end
-            translated_spatial_footprint(p,q)=interpolate_pixel_value(original_spatial_footprint,wanted_coords);
-        end
-    end
-end
-end
+normalized_maximal_radius=maximal_cell_radius/microns_per_pixel;
 
+% only pixels within the maximal radius of the centroid are non-zero, so
+% only that disc is evaluated (vectorized version of the per-pixel loop):
+map_coordinates=@(coords) coords+[a ; b];
+disc_center=centroid_location(:)-[a ; b];
+translated_spatial_footprint=zeros(N,M);
+[patch,rows,cols]=transform_footprint_in_disc(original_spatial_footprint,0,0,N,M,map_coordinates,disc_center,centroid_location,normalized_maximal_radius);
+translated_spatial_footprint(rows,cols)=patch;
+
+end

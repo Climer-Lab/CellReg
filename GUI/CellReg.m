@@ -99,6 +99,22 @@ function CellReg_OpeningFcn(hObject,~, handles, varargin)
 % Choose default command line output for CellReg
 handles.output = hObject;
 
+% Compute options (GPU acceleration / parallel pool), added here so that the
+% .fig layout stays unchanged:
+handles.compute_panel=uipanel('Parent',hObject,'Units','normalized','Position',[0.267 0.855 0.155 0.105],'Title','Compute:');
+gpu_available=cellreg_use_gpu('auto');
+if gpu_available
+    gpu_enable='on';
+else
+    gpu_enable='off';
+end
+handles.use_gpu=uicontrol('Parent',handles.compute_panel,'Style','checkbox','Units','normalized','Position',[0.05 0.52 0.9 0.42],...
+    'String','Use GPU','Value',double(gpu_available),'Enable',gpu_enable,...
+    'TooltipString','Run the rotation search and cross-correlations of the FOV alignment on the GPU');
+handles.use_parallel=uicontrol('Parent',handles.compute_panel,'Style','checkbox','Units','normalized','Position',[0.05 0.06 0.9 0.42],...
+    'String','Parallel pool (parfor)','Value',0,...
+    'TooltipString','Use a parallel pool for the rotation search when the GPU is not used (starting a pool takes tens of seconds)');
+
 % Update handles struct
 guidata(hObject, handles);
 
@@ -652,7 +668,10 @@ function transform_sessions_Callback(hObject,~, handles)
 % 3) Evaluate whether or not it is suitable for
 % longitudinal analysis
 
-use_parallel_processing=true; % either true or false
+% compute options from the GUI (the vectorized alignment no longer needs a
+% parallel pool; the GPU is the fastest option for the rotation search):
+cellreg_use_gpu(get(handles.use_gpu,'Value')==1);
+use_parallel_processing=get(handles.use_parallel,'Value')==1;
 
 data_struct=handles.data_struct;
 number_of_sessions=data_struct.number_of_sessions;
@@ -794,9 +813,6 @@ handles.data_struct=data_struct;
 disp('Saving the aligned data structure')
 save(fullfile(results_directory,'aligned_data_struct.mat'),'aligned_data_struct','-v7.3')
 guidata(hObject,handles)
-if use_parallel_processing
-    delete(gcp);
-end
 disp('Done')
 msgbox_timed('Finished aligning sessions',1)
 
