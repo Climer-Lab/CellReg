@@ -31,20 +31,18 @@ for n=1:number_of_sessions
     this_session_spatial_footprints = this_session_spatial_footprints.load_footprints;
     this_session_spatial_footprints = this_session_spatial_footprints.footprints;
     
-    num_spatial_footprints=size(this_session_spatial_footprints,1);
-    normalized_spatial_footprints=zeros(size(this_session_spatial_footprints));
-    for k=1:num_spatial_footprints
-        display_progress_bar(100*(k)/(num_spatial_footprints),false)
-        this_spatial_footprint=this_session_spatial_footprints(k,:,:);
-        this_spatial_footprint(this_spatial_footprint<pixel_weight_threshold*max(max(this_spatial_footprint)))=0;
-        if max(max(this_spatial_footprint))>0
-            normalized_spatial_footprints(k,:,:)=this_spatial_footprint/max(max(this_spatial_footprint));
-        end
-    end
+    % thresholding and normalizing all the footprints at once (same as the
+    % per-cell loop, without a strided slice per cell):
+    footprints_max=max(max(this_session_spatial_footprints,[],2),[],3);
+    this_session_spatial_footprints(this_session_spatial_footprints<pixel_weight_threshold*footprints_max)=0;
+    invalid_footprints=~(footprints_max>0);
+    footprints_max(invalid_footprints)=1;
+    normalized_spatial_footprints=this_session_spatial_footprints./footprints_max;
+    normalized_spatial_footprints(invalid_footprints,:,:)=0; % empty footprints stay zero
     display_progress_bar(' done',false);
     
-    all_projections_partial{n}=zeros(size(this_spatial_footprint,2),size(this_spatial_footprint,3),3);
-    mutual_projections_partial{n}=zeros(size(this_spatial_footprint,2),size(this_spatial_footprint,3),3);
+    all_projections_partial{n}=zeros(size(this_session_spatial_footprints,2),size(this_session_spatial_footprints,3),3);
+    mutual_projections_partial{n}=zeros(size(this_session_spatial_footprints,2),size(this_session_spatial_footprints,3),3);
     all_projections_partial{n}(:,:,2)=squeeze(sum(normalized_spatial_footprints(cell_to_index_map(cells_in_all_days,n),:,:),1));
     all_projections_partial{n}(:,:,1)=squeeze(sum(normalized_spatial_footprints(cell_to_index_map(other_cells{n},n),:,:),1));
     all_projections_partial{n}(:,:,2)=squeeze(sum(normalized_spatial_footprints(cell_to_index_map(other_cells{n},n),:,:),1))+squeeze(sum(normalized_spatial_footprints(cell_to_index_map(cells_in_all_days,n),:,:),1));

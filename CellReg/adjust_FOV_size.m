@@ -46,8 +46,13 @@ for n=1:number_of_sessions
     spatial_footprints_temp = spatial_footprints_temp.footprints;
     
     [number_of_cells, sz_y, sz_x] = size(spatial_footprints_temp);
-    adjusted_spatial_footprints_temp = zeros(number_of_cells,adjusted_y_size,adjusted_x_size);
-    adjusted_spatial_footprints_temp(:,1:sz_y,1:sz_x) = spatial_footprints_temp;
+    if sz_y==adjusted_y_size && sz_x==adjusted_x_size
+        % already the adjusted size - no need to allocate and copy
+        adjusted_spatial_footprints_temp = spatial_footprints_temp;
+    else
+        adjusted_spatial_footprints_temp = zeros(number_of_cells,adjusted_y_size,adjusted_x_size);
+        adjusted_spatial_footprints_temp(:,1:sz_y,1:sz_x) = spatial_footprints_temp;
+    end
     
     if ~isempty(footprints_info.write2path)
         footprint = mat_to_sparse_cell(adjusted_spatial_footprints_temp);

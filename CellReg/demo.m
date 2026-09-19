@@ -72,7 +72,9 @@ disp('Done')
 
 % Defining the parameters for image alignment:
 alignment_type='Translations and Rotations'; % either 'Translations', 'Translations and Rotations' or 'Non-rigid'
-use_parallel_processing=true; % either true or false
+use_parallel_processing=false; % either true or false - parfor for the rotation search when the GPU is not used (starting a pool takes tens of seconds)
+use_gpu=cellreg_use_gpu('auto'); % GPU acceleration of the rotation search / cross-correlations when a supported GPU is found
+cellreg_use_gpu(use_gpu);
 maximal_rotation=30; % in degrees - only relevant if 'Translations and Rotations' is used
 transformation_smoothness=2; % levels of non-rigid FOV transformation smoothness (range 0.5-3)
 reference_session_index=1; 
@@ -111,9 +113,6 @@ else
     plot_alignment_results(adjusted_spatial_footprints,centroid_locations,spatial_footprints_corrected,centroid_locations_corrected,adjusted_footprints_projections,footprints_projections_corrected,reference_session_index,all_projections_correlations,maximal_cross_correlation,alignment_translations,overlapping_FOV,alignment_type,number_of_cells_per_session,figures_directory,figures_visibility)
 end
 
-if use_parallel_processing
-    delete(gcp);
-end
 disp('Done')
 
 %% Stage 3 (part a) - Calculating the similarities distributions from the data:
